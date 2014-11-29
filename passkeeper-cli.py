@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import argparse
+import logging
+import ConfigParser
+from passkeeper import Passkeeper
+from passkeeper.tools import *
+
+def init_logger():
+    # Init logging level with debug stream handler
+    log = logging.getLogger()
+    log.setLevel(logging.INFO)
+    #log.setLevel(logging.DEBUG)
+    logformat =  '%(asctime)s %(levelname)s -: %(message)s'
+    # Set logger formater
+    formatter = logging.Formatter(logformat)
+    # Stream handler
+    hdl = logging.StreamHandler()
+    hdl.setFormatter(formatter)
+    log.addHandler(hdl)
+    ## File handler
+    #hdl = logging.FileHandler('/tmp/%s.log' % __name__)
+    #hdl.setFormatter(formatter)
+    #log.addHandler(hdl)
+    return log
+
+def init_argparse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-D", "--directory",
+                help="Directory wich contain passkeeper ini files",
+                metavar="DIRECTORY",
+                type=str,
+                required=True)
+    parser.add_argument("-s", "--search",
+                help="Search pattern in *.ini",
+                metavar="PATTERN",
+                type=str)
+    parser.add_argument("--init",
+                help="Create and init new passkeeper directory",
+                action='store_true')
+    parser.add_argument("-d", '--decrypt',
+                help="Decrypt all .passkeeper files",
+                action='store_true')
+    parser.add_argument("-e", '--encrypt',
+                help="Decrypt all .ini files",
+                action='store_true')
+    return parser.parse_args()
+
+if __name__ == '__main__':
+    # init
+    log = init_logger()
+    args = init_argparse()
+
+    pk = Passkeeper(directory=args.directory)
+
+    # Init new directory
+    if args.init:
+        pk.init_dir()
+    # Decrypt files
+    elif args.decrypt:
+        pk.decrypt()
+    # Search in files
+    elif args.search:
+        config, matching = pk.search(args.search)
+        pk.print_sections(config=config,
+                          pattern=args.search,
+                          matching_sections=matching)
+    # Encrypt files
+    elif args.encrypt:
+        status = pk.encrypt()
+        if status:
+            pk.cleanup_ini()
+        
+
+
