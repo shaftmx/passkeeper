@@ -17,7 +17,7 @@ Quick usage
 **Init a new passkeeper directory :**
 
 ```
-passkeeper-cli.py --directory /opt/mypasskeeper --init
+passkeeper-cli --directory /opt/mypasskeeper --init
 ```
 
 This will generate a default encrypted file : `encrypted/default.ini.passkeeper` and init local `git` repository in `/opt/mypasskeeper`.
@@ -26,7 +26,7 @@ This will generate a default encrypted file : `encrypted/default.ini.passkeeper`
 **Lets decrypt our ini files :**
 
 ```
-passkeeper-cli.py --directory /opt/mypasskeeper --decrypt
+passkeeper-cli --directory /opt/mypasskeeper --decrypt
 ```
 
 Now you can find all encrypted ini file in `/opt/mypasskeeper` directory in our case `default.ini`. 
@@ -42,7 +42,7 @@ Simply add new ini file in your passkeeper directory. I recomment you to create 
 **Search pattern in all ini file :**
 
 ```
-passkeeper-cli.py --directory /opt/mypasskeeper --search foo
+passkeeper-cli --directory /opt/mypasskeeper --search foo
 [foo]
 name = foo access
 type = web
@@ -56,7 +56,7 @@ comments = foo is good website
 
 **Encrypt / close your ini file :**
 ```
-passkeeper-cli.py --directory /opt/mypasskeeper --encrypt
+passkeeper-cli --directory /opt/mypasskeeper --encrypt
 ```
 
 All ini file are encrypted with standard `gnupg symmetric` mode. All ini file are `shred` and a commit make local `git commit`.
