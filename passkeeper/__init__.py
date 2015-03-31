@@ -43,7 +43,7 @@ comments = foo is good website
         self.encrypt()
         self.cleanup_ini()
 
-    def encrypt(self):
+    def encrypt(self, commit_message='Update encrypted files'):
         passphrase = getpass()
         passphrase_confirm = getpass('Confirm: ')
         if passphrase != passphrase_confirm:
@@ -65,7 +65,7 @@ comments = foo is good website
                         passphrase=passphrase)
                 LOG.info(encrypted.status)
                 self.git.add([encrypted_file_path])
-        self.git.commit('Update encrypted files')
+        self.git.commit('%s' % commit_message)
         return True
 
     def cleanup_ini(self):
