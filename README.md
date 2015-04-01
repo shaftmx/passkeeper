@@ -65,4 +65,7 @@ All ini file are encrypted with standard `gnupg symmetric` mode. All ini file ar
 Setup
 ======
 
-```pip install git+git://github.com/shaftmx/passkeeper -r https://raw.githubusercontent.com/shaftmx/passkeeper/master/requirements.txt```
+```
+pip install git+git://github.com/shaftmx/passkeeper \
+-r https://raw.githubusercontent.com/shaftmx/passkeeper/master/requirements.txt
+```
