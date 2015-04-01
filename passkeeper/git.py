@@ -22,6 +22,7 @@ class Git(object):
 
     def init(self):
         self._run_git_cmd('init')
+        self._run_git_cmd('config user.name passkeeper')
 
     def add(self, files):
         for file in files:

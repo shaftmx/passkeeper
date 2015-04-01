@@ -6,4 +6,6 @@ install:
   - pip install -r test-requirements.txt
   - pip install -r requirements.txt
 # command to run tests
-script: tox -epy27
+script:
+  - tox -epy27 passkeeper/tests/units
+  - tox -epy27 passkeeper/tests/functionals

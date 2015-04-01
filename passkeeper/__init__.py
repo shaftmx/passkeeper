@@ -58,13 +58,15 @@ comments = foo is good website
             if (fname.endswith('.ini')
             and os.path.isfile(file_path)):
                 LOG.info('Encrypt file %s' % fname)
-                encrypted_file_path = join_os(self.directory, 'encrypted',
-                                              '%s.passkeeper' % fname)
+                git_relative_file_path = join_os('encrypted',
+                                                 '%s.passkeeper' % fname)
+                encrypted_file_path = join_os(self.directory,
+                                              git_relative_file_path)
                 encrypted = encrypt(source=file_path,
                         output=encrypted_file_path,
                         passphrase=passphrase)
                 LOG.info(encrypted.status)
-                self.git.add([encrypted_file_path])
+                self.git.add([git_relative_file_path])
         self.git.commit('%s' % commit_message)
         return True
 
