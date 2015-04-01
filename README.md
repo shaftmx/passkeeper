@@ -62,7 +62,7 @@ passkeeper-cli --directory /opt/mypasskeeper --encrypt
 All ini file are encrypted with standard `gnupg symmetric` mode. All ini file are `shred` and a commit make local `git commit`.
 
 
-Requirements
-=============
+Setup
+======
 
-```pip install python-gnupg```
+```pip install git+git://github.com/shaftmx/passkeeper -r https://raw.githubusercontent.com/shaftmx/passkeeper/master/requirements.txt```

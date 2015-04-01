@@ -1,2 +1,2 @@
-python-gnupg==0.3.7
-argparse==1.2.1
+python-gnupg
+argparse
