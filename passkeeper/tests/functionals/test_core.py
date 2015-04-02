@@ -111,9 +111,48 @@ comments = bar is good website
         self.assertTrue(self._string_in_file(filename = '.tox/foo/default.ini',
                                         pattern = 'bar is good website'))
 
+    def test_add_file(self):
+
+        # Fake getpass
+        passkeeper.getpass = mock.MagicMock()
+        passkeeper.getpass.return_value = "foo"
+
+        # init
+        pk = passkeeper.Passkeeper(directory='.tox/foo')
+        # Init directory
+        pk.init_dir()
+        # Decrypt files
+        pk.decrypt()
+
+        # Add new bar.ini file
+        sample_file = ("""[bar]
+name = bar access
+type = web
+url = http://bar.com
+password = bar
+login = bar
+comments = bar is good website
+""")
+        with open('.tox/foo/bar.ini', 'w') as f:
+            f.write(sample_file)
+
+        # Encrypt files
+        pk.encrypt()
+        # Call cleanup ini files
+        pk.cleanup_ini()
+        self.assertFalse(isfile('.tox/foo/bar.ini'))
+        self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
+        self.assertTrue(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))
+        self.assertTrue(self._string_in_file(filename = '.tox/foo/encrypted/bar.ini.passkeeper',
+                                        pattern = 'BEGIN PGP MESSAGE'))
+
+        # re Decrypt files
+        pk.decrypt()
+        self.assertTrue(isfile('.tox/foo/bar.ini'))
+        self.assertTrue(self._string_in_file(filename = '.tox/foo/bar.ini',
+                                        pattern = 'bar is good website'))
 
 
-# Test add new file
 # Test delete a file
 # Search in a file
 #        # Search in files
