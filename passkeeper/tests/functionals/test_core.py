@@ -30,7 +30,9 @@ class CoreTestCase(test_base.TestCase):
         passkeeper.getpass = mock.MagicMock()
         passkeeper.getpass.return_value = "foo"
 
+        #
         # init
+        #
         pk = passkeeper.Passkeeper(directory='.tox/foo')
 
         # check we have nothing
@@ -56,22 +58,67 @@ class CoreTestCase(test_base.TestCase):
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
         self.assertEquals(2, len(git_logs))
 
-    
-#        # Decrypt files
-#        elif args.decrypt:
-#            pk.decrypt()
+        #
+        # Decrypt files
+        #
+        pk.decrypt()
+
+        self.assertTrue(isfile('.tox/foo/default.ini'))
+        self.assertTrue(self._string_in_file(filename = '.tox/foo/default.ini',
+                                        pattern = 'foo is good website'))
+
+        # Add input in file
+        sample_file = ("""[bar]
+name = bar access
+type = web
+url = http://bar.com
+password = bar
+login = bar
+comments = bar is good website
+""")
+        with open('.tox/foo/default.ini', 'a') as f:
+            f.write(sample_file)
+
+        # At this state we should stay 2
+        git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
+        self.assertEquals(2, len(git_logs))
+
+        #
+        # Encrypt files
+        #
+        pk.encrypt(commit_message='Add bar entry')
+
+        # Ini file should stay
+        self.assertTrue(isfile('.tox/foo/default.ini'))
+
+        # At this state we should have our new commit (last line)
+        git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
+        self.assertTrue( 'Add bar entry' in git_logs[-1] )
+        self.assertTrue(self._string_in_file(filename = '.tox/foo/encrypted/default.ini.passkeeper',
+                                        pattern = 'BEGIN PGP MESSAGE'))
+
+        # Call cleanup ini files
+        pk.cleanup_ini()
+
+        # Ini file should stay
+        self.assertFalse(isfile('.tox/foo/default.ini'))
+
+        #
+        # Decrypt file (last validation)
+        #
+        pk.decrypt()
+
+        self.assertTrue(self._string_in_file(filename = '.tox/foo/default.ini',
+                                        pattern = 'bar is good website'))
+
+
+
+# Test add new file
+# Test delete a file
+# Search in a file
 #        # Search in files
 #        elif args.search:
 #            config, matching = pk.search(args.search)
 #            pk.print_sections(config=config,
 #                              pattern=args.search,
 #                              matching_sections=matching)
-#        # Encrypt files
-#        elif args.encrypt:
-#            if args.commit_message:
-#                status = pk.encrypt(commit_message=args.commit_message)
-#            else:
-#                status = pk.encrypt()
-#            if status:
-#                pk.cleanup_ini()
-#
