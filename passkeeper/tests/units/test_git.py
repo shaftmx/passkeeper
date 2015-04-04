@@ -13,6 +13,7 @@ class GitTestCase(test_base.TestCase):
 
     def tearDown(self):
         super(GitTestCase, self).tearDown()
+        del self.git
 
     def test_constructor(self):
         self.assertEquals(self.git.directory, 'foo')
