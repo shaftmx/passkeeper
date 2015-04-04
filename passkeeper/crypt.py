@@ -18,7 +18,7 @@ def encrypt(source, output, passphrase):
             armor=True,
             passphrase=passphrase,
             output=output)
-        return encrypted
+    return encrypted
 
 
 def decrypt(source, output, passphrase):
@@ -28,4 +28,4 @@ def decrypt(source, output, passphrase):
             passphrase=passphrase,
             always_trust=True,
             output=output)
-        return decrypted
+    return decrypted
