@@ -29,6 +29,10 @@ class TestCase(unittest.TestCase):
         except:
             return False
 
+    def assertStringInFile(self, filename, pattern):
+        self.assertTrue(self._string_in_file(filename=filename,
+                                             pattern=pattern))
+
     def _get_file_lines(self, filename):
         with open(filename, 'r') as f:
             _lines = f.readlines()
