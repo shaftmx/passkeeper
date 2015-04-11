@@ -153,14 +153,6 @@ comments = bar is good website
                                         pattern = 'bar is good website'))
 
 
-# Test delete a file
-# Search in a file
-#        # Search in files
-#        elif args.search:
-#            config, matching = pk.search(args.search)
-#            pk.print_sections(config=config,
-#                              pattern=args.search,
-#                              matching_sections=matching)
 
     # Test flush history
     def test_flush_history(self):
@@ -168,17 +160,11 @@ comments = bar is good website
         passkeeper.getpass = mock.MagicMock()
         passkeeper.getpass.return_value = "foo"
 
-        #
         # init
-        #
         pk = passkeeper.Passkeeper(directory='.tox/foo')
-
         # Init directory
         pk.init_dir()
-
-        #
         # Decrypt files
-        #
         pk.decrypt()
 
         # Add input in file
@@ -193,18 +179,16 @@ comments = bar is good website
         with open('.tox/foo/bar.ini', 'a') as f:
             f.write(sample_file)
 
-        #
         # Encrypt files
-        #
         pk.encrypt(commit_message='Add bar entry')
+        # Call cleanup ini files
+        pk.cleanup_ini()
 
         # Check number of commit
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
         self.assertEquals(3, len(git_logs))
-        self.assertTrue('Add bar entry' in git_logs[-1])
-
-        # Call cleanup ini files
-        pk.cleanup_ini()
+        self.assertTrue(self._string_in_file(filename = '.tox/foo/.git/logs/HEAD',
+                                        pattern = 'Add bar entry'))
 
         # flush
         pk.flush_history(directory='.tox/foo')
@@ -216,7 +200,6 @@ comments = bar is good website
         # At this state we should have only one new commit (Clean history)
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
         self.assertEquals(1, len(git_logs))
-        self.assertTrue('Clean git History' in git_logs[-1])
-
-
+        self.assertTrue(self._string_in_file(filename = '.tox/foo/.git/logs/HEAD',
+                                        pattern = 'Clean git History'))
 

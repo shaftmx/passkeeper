@@ -103,7 +103,7 @@ comments = foo is good website
         """
         shred_dir(os_join(directory, '.git'))
         self.git.init()
-        self.git.add(['./encrypted', '.gitignore'])
+        self.git.add(['encrypted', '.gitignore'])
         self.git.commit('Clean git History')
 
     def decrypt(self):
