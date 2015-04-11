@@ -4,6 +4,7 @@
 import argparse
 import logging
 import ConfigParser
+from os.path import join as os_join
 from passkeeper import Passkeeper
 from passkeeper.tools import *
 
@@ -38,6 +39,9 @@ def init_argparse():
                 type=str)
     parser.add_argument("--init",
                 help="Create and init new passkeeper directory",
+                action='store_true')
+    parser.add_argument("--flush-history",
+                help="Flush git history to increase security",
                 action='store_true')
     parser.add_argument("-d", '--decrypt',
                 help="Decrypt all .passkeeper files",
@@ -78,6 +82,7 @@ if __name__ == '__main__':
             status = pk.encrypt()
         if status:
             pk.cleanup_ini()
-        
-
+    # Clean git history    
+    elif args.flush_history:
+        pk.flush_history(directory=args.directory)
 

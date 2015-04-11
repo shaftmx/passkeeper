@@ -161,3 +161,62 @@ comments = bar is good website
 #            pk.print_sections(config=config,
 #                              pattern=args.search,
 #                              matching_sections=matching)
+
+    # Test flush history
+    def test_flush_history(self):
+        # Fake getpass
+        passkeeper.getpass = mock.MagicMock()
+        passkeeper.getpass.return_value = "foo"
+
+        #
+        # init
+        #
+        pk = passkeeper.Passkeeper(directory='.tox/foo')
+
+        # Init directory
+        pk.init_dir()
+
+        #
+        # Decrypt files
+        #
+        pk.decrypt()
+
+        # Add input in file
+        sample_file = ("""[bar]
+name = bar access
+type = web
+url = http://bar.com
+password = bar
+login = bar
+comments = bar is good website
+""")
+        with open('.tox/foo/bar.ini', 'a') as f:
+            f.write(sample_file)
+
+        #
+        # Encrypt files
+        #
+        pk.encrypt(commit_message='Add bar entry')
+
+        # Check number of commit
+        git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
+        self.assertEquals(3, len(git_logs))
+        self.assertTrue('Add bar entry' in git_logs[-1])
+
+        # Call cleanup ini files
+        pk.cleanup_ini()
+
+        # flush
+        pk.flush_history(directory='.tox/foo')
+
+        # Check files are still there
+        self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
+        self.assertTrue(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))
+
+        # At this state we should have only one new commit (Clean history)
+        git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
+        self.assertEquals(1, len(git_logs))
+        self.assertTrue('Clean git History' in git_logs[-1])
+
+
+

@@ -79,6 +79,33 @@ comments = foo is good website
                 LOG.info('Clean file %s' % fname)
                 run_cmd('shred --remove %s' % file_path)
 
+    def flush_history(self, directory):
+        """
+        Flush the git history
+
+        Destroy .git directory by shred all files and init git again.
+        This allow to clear git history and to insure more security
+
+        :param directory: Path of the passkeeper directory
+        :type directory: str
+
+        :Example:
+
+        >>> flush_history('/opt/mypasskeeper/')
+        Clean file master
+        Clean file HEAD
+        Clean file exclude
+        ...
+        Dépôt Git vide initialisé dans /opt/mypasskeeper/.git/
+        master (commit racine) 9e4a2a0] Clean git History
+
+        .. seealso:: shred_dir(), git.init(), git.add(), git.commit()
+        """
+        shred_dir(os_join(directory, '.git'))
+        self.git.init()
+        self.git.add(['./encrypted', '.gitignore'])
+        self.git.commit('Clean git History')
+
     def decrypt(self):
         passphrase = getpass()
 
