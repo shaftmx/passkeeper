@@ -79,19 +79,16 @@ comments = foo is good website
                 LOG.info('Clean file %s' % fname)
                 run_cmd('shred --remove %s' % file_path)
 
-    def flush_history(self, directory):
+    def flush_history(self):
         """
         Flush the git history
 
         Destroy .git directory by shred all files and init git again.
         This allow to clear git history and to insure more security
 
-        :param directory: Path of the passkeeper directory
-        :type directory: str
-
         :Example:
 
-        >>> flush_history('/opt/mypasskeeper/')
+        >>> flush_history()
         Clean file master
         Clean file HEAD
         Clean file exclude
@@ -101,7 +98,7 @@ comments = foo is good website
 
         .. seealso:: shred_dir(), git.init(), git.add(), git.commit()
         """
-        shred_dir(os_join(directory, '.git'))
+        shred_dir(os_join(self.directory, '.git'))
         self.git.init()
         self.git.add(['encrypted', '.gitignore'])
         self.git.commit('Clean git History')

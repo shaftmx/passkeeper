@@ -191,7 +191,7 @@ comments = bar is good website
                                         pattern = 'Add bar entry'))
 
         # flush
-        pk.flush_history(directory='.tox/foo')
+        pk.flush_history()
 
         # Check files are still there
         self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
