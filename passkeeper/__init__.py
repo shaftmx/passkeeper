@@ -18,6 +18,7 @@ class Passkeeper(object):
     def __init__(self, directory):
         self.directory = directory
         self.git = Git(self.directory)
+        self.encrypted_dir = 'encrypted'
 
     def init_dir(self):
         LOG.info('Init directory %s' % self.directory)
@@ -50,7 +51,7 @@ comments = foo is good website
             LOG.critical('Password and confirm are different')
             return False
 
-        create_dir(join_os(self.directory, 'encrypted'))
+        create_dir(join_os(self.directory, self.encrypted_dir))
 
         LOG.info('Encrypt files :')
         for fname in os.listdir(self.directory):
@@ -58,7 +59,7 @@ comments = foo is good website
             if (fname.endswith('.ini')
             and os.path.isfile(file_path)):
                 LOG.info('Encrypt file %s' % fname)
-                git_relative_file_path = join_os('encrypted',
+                git_relative_file_path = join_os(self.encrypted_dir,
                                                  '%s.passkeeper' % fname)
                 encrypted_file_path = join_os(self.directory,
                                               git_relative_file_path)
@@ -100,14 +101,14 @@ comments = foo is good website
         """
         shred_dir(os_join(self.directory, '.git'))
         self.git.init()
-        self.git.add(['encrypted', '.gitignore'])
+        self.git.add([self.encrypted_dir, '.gitignore'])
         self.git.commit('Clean git History')
 
     def decrypt(self):
         passphrase = getpass()
 
         LOG.info('Decrypt files :')
-        source_dir = os_join(self.directory, 'encrypted')
+        source_dir = os_join(self.directory, self.encrypted_dir)
         for fname in os.listdir(source_dir):
             file_path = os_join(source_dir, fname)
             if (fname.endswith('.passkeeper')
