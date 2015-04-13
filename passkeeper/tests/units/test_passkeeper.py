@@ -26,6 +26,7 @@ class PasskeeperTestCase(test_base.TestCase):
     def test_constructor(self):
         self.mock_git.assert_called_once_with('foo')
         self.assertEquals(self.pk.directory, 'foo')
+        self.assertEquals(self.pk.encrypted_dir, 'encrypted')
 
 
     @patch('passkeeper.Passkeeper.cleanup_ini')
