@@ -164,3 +164,16 @@ class PasskeeperTestCase(test_base.TestCase):
 
         self.assertEquals(mock_config.read.call_count, 0)
         self.assertEquals([], matching_sections)
+
+
+    @patch('passkeeper.shred_dir')
+    def test_flush_history(self, mock_shred):
+
+        self.pk.flush_history()
+
+        mock_shred.assert_called_once_with('foo/.git')
+        calls = [ call().init(),
+                  call().add(['encrypted', '.gitignore']),
+                  call().commit('Clean git History')]
+
+        self.mock_git.assert_has_calls(calls)
