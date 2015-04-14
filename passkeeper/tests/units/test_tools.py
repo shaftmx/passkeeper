@@ -51,3 +51,18 @@ class ToolsTestCase(test_base.TestCase):
             run_cmd(cmd='foo', dry_run=False)
         mock_call.assert_called_once_with('foo', shell=True)
 
+
+    @patch('passkeeper.tools.run_cmd')
+    @patch('passkeeper.os.rmdir')
+    @patch('passkeeper.os.walk')
+    def test_shred_dir(self, mock_walk, mock_rmdir, mock_cmd):
+
+        mock_walk.return_value = [ ('foo/.git', ['subdir1'], ['bli']), ('foo/.git/subdir1', [], ['bar'])]
+
+        shred_dir('foo/.git')
+
+        calls = [call('shred -f --remove foo/.git/bli'), call('shred -f --remove foo/.git/subdir1/bar')]
+        mock_cmd.assert_has_calls(calls)
+
+        calls = [call('foo/.git/subdir1'), call('foo/.git')]
+        mock_rmdir.assert_has_calls(calls)
