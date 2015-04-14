@@ -68,7 +68,7 @@ def run_cmd(cmd, dry_run=False):
 
 def shred_dir(directory):
     """
-    Shred all files in directory
+    Shred all files in directory and remove this directory.
 
     Shred files on a directory to avoid a malicious read
 
@@ -84,6 +84,7 @@ def shred_dir(directory):
 
     .. seealso:: run_cmd()
     """
+    # Remove directory content
     for root, dirs, files in os.walk(directory, topdown=False):
         for fname in files:
             filepath = os.path.join(root, fname)
@@ -92,4 +93,5 @@ def shred_dir(directory):
         for dname in dirs:
             dpath = os.path.join(root, dname)
             os.rmdir('%s' % dpath)
-
+    # Remove the directory
+    os.rmdir(directory)
