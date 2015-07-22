@@ -44,7 +44,9 @@ comments = foo is good website
         self.encrypt()
         self.cleanup_ini()
 
+
     def encrypt(self, commit_message='Update encrypted files'):
+        LOG.info('Encryption')
         passphrase = getpass()
         passphrase_confirm = getpass('Confirm: ')
         if passphrase != passphrase_confirm:
@@ -53,6 +55,7 @@ comments = foo is good website
 
         create_dir(join_os(self.directory, self.encrypted_dir))
 
+        # Encrypt files
         LOG.info('Encrypt files :')
         for fname in os.listdir(self.directory):
             file_path = os_join(self.directory, fname)
@@ -71,14 +74,42 @@ comments = foo is good website
         self.git.commit('%s' % commit_message)
         return True
 
+
+
+    def _remove_old_encrypted_files(self):
+        "remove old passkeeper files"
+        for efname in os.listdir(os_join(self.directory, self.encrypted_dir)):
+            LOG.debug('Check %s.' % efname)
+
+            if not os.path.isfile(os_join(self.directory, efname.rstrip('.passkeeper'))):
+                req = raw_input("File %s will be deleted because ini file hasn't been found, are you sure (y/n)\n" % efname)
+                if req == "y":
+                    LOG.info('File %s will be deleted because ini file hasn t been found.' % efname)
+                    file_path = join_os(self.directory, self.encrypted_dir, efname)
+                    # Add deleted file for commit because we shred manually
+                    git_relative_file_path = join_os(self.encrypted_dir, efname)
+                    self.git.soft_remove([git_relative_file_path])
+                    run_cmd('shred --remove %s' % file_path)
+                    self.git.commit('Remove file %s' % git_relative_file_path)
+                else:
+                    LOG.info('File %s has been concerved.' % efname)
+
+
+
     def cleanup_ini(self):
-        "Shred all ini files"
+        "Shred all ini files and remove old passkeeper files"
+
+        # Remove old passkeeper files
+        self._remove_old_encrypted_files()
+        # Remove ini files
         for fname in os.listdir(self.directory):
             file_path = os_join(self.directory, fname)
             if (fname.endswith('.ini')
             and os.path.isfile(file_path)):
                 LOG.info('Clean file %s' % fname)
                 run_cmd('shred --remove %s' % file_path)
+
+
 
     def flush_history(self):
         """

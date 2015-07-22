@@ -50,16 +50,19 @@ class PasskeeperTestCase(test_base.TestCase):
         mock_cleanup.assert_called_once_with()
 
 
+    @patch('passkeeper.Passkeeper._remove_old_encrypted_files')
     @patch('passkeeper.run_cmd')
     @patch('passkeeper.os.listdir')
     @patch('passkeeper.os.path.isfile')
-    def test_cleanup_ini(self, mock_isfile, mock_listdir, mock_cmd):
+    def test_cleanup_ini(self, mock_isfile, mock_listdir, mock_cmd,
+                               mock_remove_old_encrypted_files):
         # One ignored file and one valid file
         mock_listdir.return_value = ['ignored', 'bar.ini']
         mock_isfile.return_value = True
         self.pk.cleanup_ini()
 
         mock_cmd.assert_called_once_with('shred --remove foo/bar.ini')
+        mock_remove_old_encrypted_files.assert_called_once_with()
 
         # Test with bad filepath. Do nothing
         mock_cmd.reset_mock()
@@ -68,6 +71,34 @@ class PasskeeperTestCase(test_base.TestCase):
         self.pk.cleanup_ini()
 
         self.assertEquals(mock_cmd.call_count, 0)
+
+
+    @patch('passkeeper.raw_input')
+    @patch('passkeeper.run_cmd')
+    @patch('passkeeper.os.listdir')
+    @patch('passkeeper.os.path.isfile')
+    def test__remove_old_encrypted_files(self, mock_isfile, mock_listdir,
+                               mock_cmd, mock_raw_input):
+        # One file and 3 in encrypted so delete one.
+        # Basicly the script will remove 2 file.
+        # But we will cancel one of them
+        #  * bar keep
+        #  * foo delete canceled
+        #  * bar deleted
+
+
+        mock_raw_input.side_effect = ['n', 'y']
+        mock_listdir.return_value = [ 'bar.ini.passkeeper',
+                                      'foo.ini.passkeeper',
+                                      'bli.ini.passkeeper']
+        mock_isfile.side_effect = [ True, False, False ]
+        self.pk._remove_old_encrypted_files()
+
+        mock_cmd.assert_called_once_with('shred --remove foo/encrypted/bli.ini.passkeeper')
+        calls = [ call().soft_remove(['encrypted/bli.ini.passkeeper']),
+                  call().commit('Remove file encrypted/bli.ini.passkeeper')]
+        self.mock_git.assert_has_calls(calls)
+
 
 
     @patch('passkeeper.decrypt')

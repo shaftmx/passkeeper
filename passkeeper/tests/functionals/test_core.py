@@ -100,7 +100,7 @@ comments = bar is good website
         # Call cleanup ini files
         pk.cleanup_ini()
 
-        # Ini file should stay
+        # Ini file should not stay
         self.assertFalse(isfile('.tox/foo/default.ini'))
 
         #
@@ -202,4 +202,63 @@ comments = bar is good website
         self.assertEquals(1, len(git_logs))
         self.assertStringInFile(filename = '.tox/foo/.git/logs/HEAD',
                                 pattern = 'Clean git History')
+
+    def test_delete_file(self):
+        """ Create a new file. Decrypt this file and delete it.
+        The encrypted file should be delete at the cleanup function"""
+        # Fake getpass
+        passkeeper.getpass = mock.MagicMock()
+        passkeeper.getpass.return_value = "foo"
+        # Fake raw_input 
+        passkeeper.raw_input = lambda x: 'y'
+
+        # init
+        pk = passkeeper.Passkeeper(directory='.tox/foo')
+        # Init directory
+        pk.init_dir()
+        # Decrypt files
+        pk.decrypt()
+
+        # Add input in file
+        sample_file = ("""[bar]
+name = bar access
+""")
+        with open('.tox/foo/bar.ini', 'a') as f:
+            f.write(sample_file)
+
+        # Encrypt files
+        pk.encrypt(commit_message='Add bar entry')
+        # Call cleanup ini files
+        pk.cleanup_ini()
+
+        # Decrypt file (last validation)
+        pk.decrypt()
+        os.remove('.tox/foo/bar.ini')
+
+        # Encrypt files
+        pk.encrypt(commit_message='Will remove bar.ini')
+
+
+        # Control state befor
+        self.assertTrue(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))
+        git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
+        self.assertTrue( 'Will remove bar.ini' in git_logs[-1] )
+
+        # Call cleanup. file bar.passkeeped should be remove
+        pk.cleanup_ini()
+
+        # Should have a commit for file deleted
+        self.assertFalse(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))
+        self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
+        git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
+        self.assertTrue( 'Remove file encrypted/bar.ini.passkeeper' in git_logs[-1] )
+
+
+# Search in a file
+#        # Search in files
+#        elif args.search:
+#            config, matching = pk.search(args.search)
+#            pk.print_sections(config=config,
+#                              pattern=args.search,
+#                              matching_sections=matching)
 

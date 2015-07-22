@@ -81,6 +81,7 @@ if __name__ == '__main__':
         else:
             status = pk.encrypt()
         if status:
+            # Purge deleted file before encrypt
             pk.cleanup_ini()
     # Clean git history    
     elif args.flush_history:
