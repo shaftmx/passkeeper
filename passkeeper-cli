@@ -85,5 +85,5 @@ if __name__ == '__main__':
             pk.cleanup_ini()
     # Clean git history    
     elif args.flush_history:
-        pk.flush_history(directory=args.directory)
+        pk.flush_history()
 
