@@ -45,10 +45,14 @@ class CoreTestCase(test_base.TestCase):
         self.assertTrue(isdir('.tox/foo'))
         self.assertTrue(isdir('.tox/foo/.git'))
         self.assertTrue(isfile('.tox/foo/.gitignore'))
+        self.assertFalse(isdir('.tox/foo/default.raw'))
         self.assertFalse(isfile('.tox/foo/default.ini'))
+        self.assertFalse(isfile('.tox/foo/default.raw/ssh_id.rsa'))
 
         self.assertTrue(isdir('.tox/foo/encrypted'))
+        self.assertTrue(isdir('.tox/foo/encrypted/default.raw'))
         self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
+        self.assertTrue(isfile('.tox/foo/encrypted/default.raw/ssh_id.rsa.passkeeper'))
         self.assertStringInFile(filename = '.tox/foo/encrypted/default.ini.passkeeper',
                                 pattern = 'BEGIN PGP MESSAGE')
 
@@ -66,6 +70,7 @@ class CoreTestCase(test_base.TestCase):
         self.assertTrue(isfile('.tox/foo/default.ini'))
         self.assertStringInFile(filename = '.tox/foo/default.ini',
                                 pattern = 'foo is good website')
+        self.assertTrue(isfile('.tox/foo/default.raw/ssh_id.rsa'))
 
         # Add input in file
         sample_file = ("""[bar]
@@ -88,8 +93,9 @@ comments = bar is good website
         #
         pk.encrypt(commit_message='Add bar entry')
 
-        # Ini file should stay
+        # all file should say
         self.assertTrue(isfile('.tox/foo/default.ini'))
+        self.assertTrue(isfile('.tox/foo/default.raw/ssh_id.rsa'))
 
         # At this state we should have our new commit (last line)
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
@@ -102,6 +108,8 @@ comments = bar is good website
 
         # Ini file should not stay
         self.assertFalse(isfile('.tox/foo/default.ini'))
+        self.assertFalse(isfile('.tox/foo/default.raw/ssh_id.rsa'))
+        self.assertFalse(isdir('.tox/foo/default.raw'))
 
         #
         # Decrypt file (last validation)
@@ -136,14 +144,24 @@ comments = bar is good website
         with open('.tox/foo/bar.ini', 'w') as f:
             f.write(sample_file)
 
+        # Add raw dir and file in it
+        create_dir('.tox/foo/bar.raw/')
+        sample_file = ("""My private data""")
+        with open('.tox/foo/bar.raw/private', 'w') as f:
+            f.write(sample_file)
+
         # Encrypt files
         pk.encrypt()
         # Call cleanup ini files
         pk.cleanup_ini()
         self.assertFalse(isfile('.tox/foo/bar.ini'))
+        self.assertFalse(isdir('.tox/foo/bar.raw'))
         self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
         self.assertTrue(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))
+        self.assertTrue(isfile('.tox/foo/encrypted/bar.raw/private.passkeeper'))
         self.assertStringInFile(filename = '.tox/foo/encrypted/bar.ini.passkeeper',
+                                pattern = 'BEGIN PGP MESSAGE')
+        self.assertStringInFile(filename = '.tox/foo/encrypted/bar.raw/private.passkeeper',
                                 pattern = 'BEGIN PGP MESSAGE')
 
         # re Decrypt files
@@ -151,6 +169,9 @@ comments = bar is good website
         self.assertTrue(isfile('.tox/foo/bar.ini'))
         self.assertStringInFile(filename = '.tox/foo/bar.ini',
                                 pattern = 'bar is good website')
+        self.assertTrue(isfile('.tox/foo/bar.raw/private'))
+        self.assertStringInFile(filename = '.tox/foo/bar.raw/private',
+                                pattern = 'My private data')
 
 
 
@@ -226,6 +247,12 @@ name = bar access
         with open('.tox/foo/bar.ini', 'a') as f:
             f.write(sample_file)
 
+        # Add raw dir and file in it
+        create_dir('.tox/foo/bar.raw/')
+        sample_file = ("""My private data""")
+        with open('.tox/foo/bar.raw/private', 'w') as f:
+            f.write(sample_file)
+
         # Encrypt files
         pk.encrypt(commit_message='Add bar entry')
         # Call cleanup ini files
@@ -234,15 +261,18 @@ name = bar access
         # Decrypt file (last validation)
         pk.decrypt()
         os.remove('.tox/foo/bar.ini')
+        shutil.rmtree('.tox/foo/bar.raw/')
+
 
         # Encrypt files
-        pk.encrypt(commit_message='Will remove bar.ini')
+        pk.encrypt(commit_message='Will remove bar.ini and bar.raw/*')
 
 
         # Control state befor
         self.assertTrue(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))
+        self.assertTrue(isfile('.tox/foo/encrypted/bar.raw/private.passkeeper'))
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
-        self.assertTrue( 'Will remove bar.ini' in git_logs[-1] )
+        self.assertTrue( 'Will remove bar.ini and bar.raw/*' in git_logs[-1] )
 
         # Call cleanup. file bar.passkeeped should be remove
         pk.cleanup_ini()
@@ -251,6 +281,7 @@ name = bar access
         self.assertFalse(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))
         self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
+        self.assertTrue( 'Remove file encrypted/bar.raw/private.passkeeper' in git_logs[-2] )
         self.assertTrue( 'Remove file encrypted/bar.ini.passkeeper' in git_logs[-1] )
 
 

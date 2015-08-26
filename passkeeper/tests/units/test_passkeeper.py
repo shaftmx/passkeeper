@@ -38,12 +38,15 @@ class PasskeeperTestCase(test_base.TestCase):
             file_handle = file_mock()
             self.pk.init_dir()
 
-        mock_create_dir.assert_called_once_with('foo')
-
-        calls = [call().init(), call().add_gitignore(['*.ini'])]
+        calls = [call().init(), call().add_gitignore(['*.ini', '/*.raw'])]
         self.mock_git.assert_has_calls(calls)
 
-        file_mock.assert_called_with('foo/default.ini', 'w')
+        calls = [call('foo'), call('foo/default.raw')]
+        mock_create_dir.assert_has_calls(calls)
+
+        file_mock.assert_any_call('foo/default.ini', 'w')
+        file_mock.assert_any_call('foo/default.raw/ssh_id.rsa', 'w')
+
         self.assertEquals(True, file_handle.write.called)
 
         mock_encrypt.assert_called_once_with()
@@ -84,19 +87,20 @@ class PasskeeperTestCase(test_base.TestCase):
         # But we will cancel one of them
         #  * bar keep
         #  * foo delete canceled
-        #  * bar deleted
+        #  * bli deleted
 
 
         mock_raw_input.side_effect = ['n', 'y']
+        # listdir is used by walk
         mock_listdir.return_value = [ 'bar.ini.passkeeper',
                                       'foo.ini.passkeeper',
-                                      'bli.ini.passkeeper']
+                                      'dir/bli.ini.passkeeper']
         mock_isfile.side_effect = [ True, False, False ]
         self.pk._remove_old_encrypted_files()
 
-        mock_cmd.assert_called_once_with('shred --remove foo/encrypted/bli.ini.passkeeper')
-        calls = [ call().soft_remove(['encrypted/bli.ini.passkeeper']),
-                  call().commit('Remove file encrypted/bli.ini.passkeeper')]
+        mock_cmd.assert_called_once_with('shred foo/encrypted/dir/bli.ini.passkeeper')
+        calls = [ call().force_remove(['encrypted/dir/bli.ini.passkeeper']),
+                  call().commit('Remove file encrypted/dir/bli.ini.passkeeper')]
         self.mock_git.assert_has_calls(calls)
 
 
@@ -105,18 +109,20 @@ class PasskeeperTestCase(test_base.TestCase):
     @patch('passkeeper.os.listdir')
     @patch('passkeeper.os.path.isfile')
     def test_decrypt(self, mock_isfile, mock_listdir, mock_decrypt):
-        # One ignored file and one valid file
-        mock_listdir.return_value = ['ignored', 'bar.ini.passkeeper']
+        # One ignored file, one valid file adn one file in raw dir.
+        # Used in walk dir
+        mock_listdir.return_value = ['ignored', 'bar.ini.passkeeper', 'foo.raw/bli.passkeeper']
         mock_isfile.return_value = True
         self.pk.decrypt()
 
-        mock_decrypt.assert_called_once_with(passphrase='secret',
-                                 source='foo/encrypted/bar.ini.passkeeper',
-                                 output='foo/bar.ini')
+        mock_decrypt.assert_any_call(output='foo/bar.ini', passphrase='secret',
+                                     source='foo/encrypted/bar.ini.passkeeper')
+        mock_decrypt.assert_any_call(output='foo/foo.raw/bli', passphrase='secret',
+                                     source='foo/encrypted/foo.raw/bli.passkeeper')
 
         # Test with bad filepath. Do nothing
         mock_decrypt.reset_mock()
-        mock_listdir.return_value = ['bar.ini.passkeeper']
+        mock_listdir.return_value = ['bad_fake_file']
         mock_isfile.return_value = False
         self.pk.decrypt()
 
@@ -136,29 +142,39 @@ class PasskeeperTestCase(test_base.TestCase):
         self.assertFalse(self.pk.encrypt())
         passkeeper.getpass = orig_getpass
 
-        # One ignored file and one valid file
-        mock_encrypt.reset_mock()
-        self.mock_git.reset_mock()
-        mock_listdir.return_value = ['ignored', 'bar.ini']
-        mock_isfile.return_value = True
-        self.assertTrue(self.pk.encrypt(commit_message='my message'))
-
-        mock_create_dir.assert_called_once_with('foo/encrypted')
-        mock_encrypt.assert_called_once_with(passphrase='secret',
-                                    source='foo/bar.ini',
-                                    output='foo/encrypted/bar.ini.passkeeper')
-        calls = [call().add(['encrypted/bar.ini.passkeeper']), call().commit('my message')]
-        self.mock_git.assert_has_calls(calls)
-        
-
         # Test with bad filepath. Don't encrypt this file
         mock_encrypt.reset_mock()
         self.mock_git.reset_mock()
-        mock_listdir.return_value = ['bar.ini']
+        mock_listdir.return_value = ['fake_bar_file.ini']
         mock_isfile.return_value = False
 
         self.assertTrue(self.pk.encrypt())
         self.assertEquals(mock_encrypt.call_count, 0)
+
+        # One ignored file and one valid file
+        # And one file in raw subdir
+        mock_encrypt.reset_mock()
+        self.mock_git.reset_mock()
+        mock_create_dir.reset_mock()
+        # First for listdir, second for walk
+        mock_listdir.side_effect = [['ignored', 'bar.ini', 'foo.raw'], ['bli']]
+        mock_isfile.return_value = True
+
+        self.assertTrue(self.pk.encrypt(commit_message='my message'))
+
+        calls = [call('foo/encrypted'), call('foo/encrypted/foo.raw')]
+        mock_create_dir.assert_has_calls(calls)
+
+        mock_encrypt.assert_any_call(passphrase='secret',
+                                     source='foo/bar.ini',
+                                     output='foo/encrypted/bar.ini.passkeeper')
+        mock_encrypt.assert_any_call(passphrase='secret',
+                                     source='foo/foo.raw/bli',
+                                     output='foo/encrypted/foo.raw/bli.passkeeper')
+        calls = [call().add(['encrypted/bar.ini.passkeeper']),
+                 call().add(['encrypted/foo.raw/bli.passkeeper']),
+                 call().commit('my message')]
+        self.mock_git.assert_has_calls(calls)
 
 
     @patch('passkeeper.ConfigParser.RawConfigParser')
