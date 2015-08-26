@@ -33,6 +33,14 @@ class Git(object):
         for file in files:
             self._run_git_cmd('rm --cached %s' % file)
 
+    def force_remove(self, files):
+        for file in files:
+            self._run_git_cmd('rm --force %s' % file)
+
+    def remove(self, files):
+        for file in files:
+            self._run_git_cmd('rm %s' % file)
+
     def commit(self, message):
         self._run_git_cmd('commit -m "%s" || true' % message)
 

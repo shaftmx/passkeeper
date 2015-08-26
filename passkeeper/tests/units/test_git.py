@@ -40,6 +40,34 @@ class GitTestCase(test_base.TestCase):
         calls = [call('add f1'), call('add f2')]
         mock_git_cmd.assert_has_calls(calls)
 
+    @patch('passkeeper.git.Git._run_git_cmd')
+    def test_soft_remove(self, mock_git_cmd):
+        self.git.soft_remove(files = ['f1', 'f2'])
+
+        calls = [call('rm --cached f1'), call('rm --cached f2')]
+        mock_git_cmd.assert_has_calls(calls)
+
+    @patch('passkeeper.git.Git._run_git_cmd')
+    def test_force_remove(self, mock_git_cmd):
+        self.git.force_remove(files = ['f1', 'f2'])
+
+        calls = [call('rm --force f1'), call('rm --force f2')]
+        mock_git_cmd.assert_has_calls(calls)
+
+    @patch('passkeeper.git.Git._run_git_cmd')
+    def test_remove(self, mock_git_cmd):
+        self.git.remove(files = ['f1', 'f2'])
+
+        calls = [call('rm f1'), call('rm f2')]
+        mock_git_cmd.assert_has_calls(calls)
+
+    @patch('passkeeper.git.Git._run_git_cmd')
+    def test_commit(self, mock_git_cmd):
+        self.git.commit(message = 'foo')
+
+        calls = [call('commit -m "foo" || true')]
+        mock_git_cmd.assert_has_calls(calls)
+
     @patch('passkeeper.git.Git.add')
     @patch('passkeeper.git.Git.commit')
     def test_add_gitignore(self, mock_commit, mock_add):
