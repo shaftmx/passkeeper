@@ -1,7 +1,7 @@
 Pass keeper
 ============
 
-[![Build Status](https://travis-ci.org/shaftmx/passkeeper.svg)](https://travis-ci.org/shaftmx/passkeeper)
+[![Build Status](https://travis-ci.org/shaftmx/passkeeper.svg?branch=master)](https://travis-ci.org/shaftmx/passkeeper)
 
 This is a very simple password keeper based on `ini` file and symmetric `gpg` encryption.
 
