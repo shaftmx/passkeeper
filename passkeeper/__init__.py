@@ -3,6 +3,8 @@
 
 import re
 from os.path import join as join_os
+from os.path import dirname
+from os.path import relpath as relative_path
 import logging
 from passkeeper.tools import *
 from passkeeper.git import *
@@ -20,12 +22,13 @@ class Passkeeper(object):
         self.git = Git(self.directory)
         self.encrypted_dir = 'encrypted'
 
+
     def init_dir(self):
         LOG.info('Init directory %s' % self.directory)
         create_dir(self.directory)
 
         self.git.init()
-        self.git.add_gitignore(['*.ini'])
+        self.git.add_gitignore(['*.ini', '/*.raw'])
 
         # Write default template file
         sample_file = ("""[foo]
@@ -41,6 +44,15 @@ comments = foo is good website
         with open(join_os(self.directory, 'default.ini'), 'w') as f:
             f.write(sample_file)
 
+	# Write default raw
+        create_dir(join_os(self.directory, 'default.raw'))
+        sample_raw = ("""-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCA
+-----END RSA PRIVATE KEY-----""")
+        LOG.debug('Write sample file default raw')
+        with open(join_os(self.directory, 'default.raw', 'ssh_id.rsa'), 'w') as f:
+            f.write(sample_raw)
+
         self.encrypt()
         self.cleanup_ini()
 
@@ -55,44 +67,102 @@ comments = foo is good website
 
         create_dir(join_os(self.directory, self.encrypted_dir))
 
-        # Encrypt files
         LOG.info('Encrypt files :')
+        # Encrypt files
         for fname in os.listdir(self.directory):
             file_path = os_join(self.directory, fname)
+            # Handle ini file
             if (fname.endswith('.ini')
             and os.path.isfile(file_path)):
                 LOG.info('Encrypt file %s' % fname)
-                git_relative_file_path = join_os(self.encrypted_dir,
+                git_relative_encrypted_file_path = join_os(self.encrypted_dir,
                                                  '%s.passkeeper' % fname)
                 encrypted_file_path = join_os(self.directory,
-                                              git_relative_file_path)
+                                              git_relative_encrypted_file_path)
                 encrypted = encrypt(source=file_path,
                         output=encrypted_file_path,
                         passphrase=passphrase)
                 LOG.info(encrypted.status)
-                self.git.add([git_relative_file_path])
+                self.git.add([git_relative_encrypted_file_path])
+            # Handle .raw directory
+            if (fname.endswith('.raw')
+            and os.path.isdir(file_path)):
+                for root, dirs, files in os.walk(file_path, topdown=False):
+                    for name in files:
+                        # /git/foo.raw/file
+                        root_raw_file_path = os.path.join(root, name)
+                        # foo.raw/file
+                        git_relative_file_path = relative_path(root_raw_file_path, self.directory).lstrip('/')
+                        LOG.info('Encrypt file %s' % git_relative_file_path)
+
+                        # encrypt/foo.raw/file.passkeeper
+                        git_encrypted_relative_file_path = join_os(self.encrypted_dir,
+                                                         '%s.passkeeper' % git_relative_file_path)
+                        # /git/encrypt/foo.raw/file.passkeeper
+                        root_encrypted_file_path = join_os(self.directory,
+                                                      git_encrypted_relative_file_path)
+
+                        # /git/encrypt/foo.raw
+                        root_encrypted_dirname_path = dirname(root_encrypted_file_path)
+
+                        create_dir(root_encrypted_dirname_path)
+                        encrypted = encrypt(source=root_raw_file_path,
+                                output=root_encrypted_file_path,
+                                passphrase=passphrase)
+                        LOG.info(encrypted.status)
+                        self.git.add([git_encrypted_relative_file_path])
+
         self.git.commit('%s' % commit_message)
         return True
 
 
+    def decrypt(self):
+        passphrase = getpass()
+
+        LOG.info('Decrypt files :')
+        source_dir = os_join(self.directory, self.encrypted_dir)
+
+        for root, dirs, files in os.walk(source_dir, topdown=False):
+            for name in files:
+                file_path = join_os(root, name)
+                relative_file_path = relative_path(file_path, source_dir).lstrip('/')
+
+                if (name.endswith('.passkeeper')
+                and os.path.isfile(file_path)):
+                    LOG.info('Decrypt file %s' % relative_file_path)
+                    decrypted_file_path = join_os(self.directory,
+                                                  re.sub('.passkeeper$', '', relative_file_path))
+                    create_dir(path=dirname(decrypted_file_path))
+                    decrypted = decrypt(source=file_path,
+                            output=decrypted_file_path,
+                            passphrase=passphrase)
+                    LOG.info(decrypted.status)
+
 
     def _remove_old_encrypted_files(self):
         "remove old passkeeper files"
-        for efname in os.listdir(os_join(self.directory, self.encrypted_dir)):
-            LOG.debug('Check %s.' % efname)
+        root_dir = os_join(self.directory, self.encrypted_dir)
+        for root, dirs, files in os.walk(root_dir, topdown=False):
+            for efname in files:
+                # /git/encrypt/foo/bar.passkeeper
+                root_file_path = os_join(root, efname)
+                # encrypt/foo/bar.passkeeper
+                git_relative_encrypted_file_path = relative_path(path=root_file_path, start=self.directory)
+                LOG.debug('Check %s.' % git_relative_encrypted_file_path)
 
-            if not os.path.isfile(os_join(self.directory, efname.rstrip('.passkeeper'))):
-                req = raw_input("File %s will be deleted because ini file hasn't been found, are you sure (y/n)\n" % efname)
-                if req == "y":
-                    LOG.info('File %s will be deleted because ini file hasn t been found.' % efname)
-                    file_path = join_os(self.directory, self.encrypted_dir, efname)
-                    # Add deleted file for commit because we shred manually
-                    git_relative_file_path = join_os(self.encrypted_dir, efname)
-                    self.git.soft_remove([git_relative_file_path])
-                    run_cmd('shred --remove %s' % file_path)
-                    self.git.commit('Remove file %s' % git_relative_file_path)
-                else:
-                    LOG.info('File %s has been concerved.' % efname)
+                # /git/foo/bar
+                orig_file_path = os_join(self.directory, re.sub('.passkeeper$', '',
+                                                                relative_path(path=root_file_path, start=root_dir)))
+                if not os.path.isfile(orig_file_path):
+                    req = raw_input("File %s will be deleted because origin file hasn't been found, are you sure (y/n)\n" % git_relative_encrypted_file_path)
+                    if req == "y":
+                        LOG.info('File %s will be deleted because origin file hasn t been found.' % git_relative_encrypted_file_path)
+                        # shred file and then git remove because git remove automaticaly empty dirs
+                        run_cmd('shred %s' % root_file_path)
+                        self.git.force_remove([git_relative_encrypted_file_path])
+                        self.git.commit('Remove file %s' % git_relative_encrypted_file_path)
+                    else:
+                        LOG.info('File %s has been concerved.' % git_relative_encrypted_file_path)
 
 
 
@@ -108,6 +178,10 @@ comments = foo is good website
             and os.path.isfile(file_path)):
                 LOG.info('Clean file %s' % fname)
                 run_cmd('shred --remove %s' % file_path)
+            elif (fname.endswith('.raw')
+            and os.path.isdir(file_path)):
+                LOG.info('Clean directory %s' % fname)
+                shred_dir(file_path)
 
 
 
@@ -135,22 +209,6 @@ comments = foo is good website
         self.git.add([self.encrypted_dir, '.gitignore'])
         self.git.commit('Clean git History')
 
-    def decrypt(self):
-        passphrase = getpass()
-
-        LOG.info('Decrypt files :')
-        source_dir = os_join(self.directory, self.encrypted_dir)
-        for fname in os.listdir(source_dir):
-            file_path = os_join(source_dir, fname)
-            if (fname.endswith('.passkeeper')
-            and os.path.isfile(file_path)):
-                LOG.info('Decrypt file %s' % fname)
-                decrypted_file_path = join_os(self.directory,
-                                              fname.rstrip('.passkeeper'))
-                decrypted = decrypt(source=file_path,
-                        output=decrypted_file_path,
-                        passphrase=passphrase)
-                LOG.info(decrypted.status)
 
     def search(self, pattern):
         LOG.info('Search in files :')
@@ -183,6 +241,7 @@ comments = foo is good website
                     break
 
         return config, matching_sections
+
 
     def print_sections(self, config, matching_sections, pattern):
         # Color matching pattern
