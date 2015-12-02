@@ -19,8 +19,7 @@
 import os
 import logging
 import subprocess
-from shutil import copy2 as copy
-from os.path import join
+from os.path import join as os_join
 
 LOG = logging.getLogger(__name__)
 
@@ -102,11 +101,11 @@ def shred_dir(directory):
     # Remove directory content
     for root, dirs, files in os.walk(directory, topdown=False):
         for fname in files:
-            filepath = os.path.join(root, fname)
+            filepath = os_join(root, fname)
             LOG.info('Clean file %s' % fname)
             run_cmd('shred -f --remove %s' % filepath)
         for dname in dirs:
-            dpath = os.path.join(root, dname)
+            dpath = os_join(root, dname)
             os.rmdir('%s' % dpath)
     # Remove the directory
     os.rmdir(directory)

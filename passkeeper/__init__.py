@@ -17,15 +17,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from os.path import join as join_os
-from os.path import dirname
-from os.path import relpath as relative_path
 import logging
 from passkeeper.tools import *
-from passkeeper.git import *
-from passkeeper.crypt import *
-from getpass import getpass
+from passkeeper.git import Git
+from passkeeper.crypt import encrypt, decrypt
 import ConfigParser
+from getpass import getpass
+from os.path import dirname
+from os.path import relpath as relative_path
+from os.path import join as os_join
 
 LOG = logging.getLogger(__name__)
 
@@ -56,16 +56,16 @@ comments = foo is good website
 """)
 
         LOG.debug('Write sample file default.ini')
-        with open(join_os(self.directory, 'default.ini'), 'w') as f:
+        with open(os_join(self.directory, 'default.ini'), 'w') as f:
             f.write(sample_file)
 
-	# Write default raw
-        create_dir(join_os(self.directory, 'default.raw'))
+        # Write default raw
+        create_dir(os_join(self.directory, 'default.raw'))
         sample_raw = ("""-----BEGIN RSA PRIVATE KEY-----
 MIIEpAIBAAKCA
 -----END RSA PRIVATE KEY-----""")
         LOG.debug('Write sample file default raw')
-        with open(join_os(self.directory, 'default.raw', 'ssh_id.rsa'), 'w') as f:
+        with open(os_join(self.directory, 'default.raw', 'ssh_id.rsa'), 'w') as f:
             f.write(sample_raw)
 
         self.encrypt()
@@ -80,7 +80,7 @@ MIIEpAIBAAKCA
             LOG.critical('Password and confirm are different')
             return False
 
-        create_dir(join_os(self.directory, self.encrypted_dir))
+        create_dir(os_join(self.directory, self.encrypted_dir))
 
         LOG.info('Encrypt files :')
         # Encrypt files
@@ -90,13 +90,13 @@ MIIEpAIBAAKCA
             if (fname.endswith('.ini')
             and os.path.isfile(file_path)):
                 LOG.info('Encrypt file %s' % fname)
-                git_relative_encrypted_file_path = join_os(self.encrypted_dir,
-                                                 '%s.passkeeper' % fname)
-                encrypted_file_path = join_os(self.directory,
+                git_relative_encrypted_file_path = os_join(self.encrypted_dir,
+                                                       '%s.passkeeper' % fname)
+                encrypted_file_path = os_join(self.directory,
                                               git_relative_encrypted_file_path)
                 encrypted = encrypt(source=file_path,
-                        output=encrypted_file_path,
-                        passphrase=passphrase)
+                                    output=encrypted_file_path,
+                                    passphrase=passphrase)
                 LOG.info(encrypted.status)
                 self.git.add([git_relative_encrypted_file_path])
             # Handle .raw directory
@@ -111,10 +111,10 @@ MIIEpAIBAAKCA
                         LOG.info('Encrypt file %s' % git_relative_file_path)
 
                         # encrypt/foo.raw/file.passkeeper
-                        git_encrypted_relative_file_path = join_os(self.encrypted_dir,
+                        git_encrypted_relative_file_path = os_join(self.encrypted_dir,
                                                          '%s.passkeeper' % git_relative_file_path)
                         # /git/encrypt/foo.raw/file.passkeeper
-                        root_encrypted_file_path = join_os(self.directory,
+                        root_encrypted_file_path = os_join(self.directory,
                                                       git_encrypted_relative_file_path)
 
                         # /git/encrypt/foo.raw
@@ -122,8 +122,8 @@ MIIEpAIBAAKCA
 
                         create_dir(root_encrypted_dirname_path)
                         encrypted = encrypt(source=root_raw_file_path,
-                                output=root_encrypted_file_path,
-                                passphrase=passphrase)
+                                            output=root_encrypted_file_path,
+                                            passphrase=passphrase)
                         LOG.info(encrypted.status)
                         self.git.add([git_encrypted_relative_file_path])
 
@@ -139,13 +139,13 @@ MIIEpAIBAAKCA
 
         for root, dirs, files in os.walk(source_dir, topdown=False):
             for name in files:
-                file_path = join_os(root, name)
+                file_path = os_join(root, name)
                 relative_file_path = relative_path(file_path, source_dir).lstrip('/')
 
                 if (name.endswith('.passkeeper')
                 and os.path.isfile(file_path)):
                     LOG.info('Decrypt file %s' % relative_file_path)
-                    decrypted_file_path = join_os(self.directory,
+                    decrypted_file_path = os_join(self.directory,
                                                   re.sub('.passkeeper$', '', relative_file_path))
                     create_dir(path=dirname(decrypted_file_path))
                     decrypted = decrypt(source=file_path,
