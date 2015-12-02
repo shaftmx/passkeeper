@@ -21,6 +21,7 @@ import argparse
 import logging
 from passkeeper import Passkeeper
 from passkeeper.tools import *
+from getpass import getpass
 
 def init_logger():
     # Init logging level with debug stream handler
@@ -78,10 +79,10 @@ if __name__ == '__main__':
 
     # Init new directory
     if args.init:
-        pk.init_dir()
+        pk.init_dir(passphrase=getpass())
     # Decrypt files
     elif args.decrypt:
-        pk.decrypt()
+        pk.decrypt(passphrase=getpass())
     # Search in files
     elif args.search:
         config, matching = pk.search(args.search)
@@ -90,10 +91,18 @@ if __name__ == '__main__':
                           matching_sections=matching)
     # Encrypt files
     elif args.encrypt:
+
+        passphrase = getpass()
+        passphrase_confirm = getpass('Confirm: ')
+        if passphrase != passphrase_confirm:
+            print ('Password and confirm are different')
+            exit(1)
+
         if args.commit_message:
-            status = pk.encrypt(commit_message=args.commit_message)
+            status = pk.encrypt(passphrase=passphrase,
+                                commit_message=args.commit_message)
         else:
-            status = pk.encrypt()
+            status = pk.encrypt(passphrase=passphrase)
         if status:
             # Purge deleted file before encrypt
             pk.cleanup_ini()

@@ -26,9 +26,6 @@ class PasskeeperTestCase(test_base.TestCase):
     @patch('passkeeper.Git')
     def setUp(self, mock_git):
         super(PasskeeperTestCase, self).setUp()
-        self.getpass_orig = passkeeper.getpass
-        passkeeper.getpass = MagicMock()
-        passkeeper.getpass.return_value = "secret"
         self.mock_git = mock_git
         self.pk = Passkeeper('foo')
 
@@ -36,7 +33,6 @@ class PasskeeperTestCase(test_base.TestCase):
         super(PasskeeperTestCase, self).tearDown()
         del self.pk
         del self.mock_git
-        passkeeper.getpass = self.getpass_orig
 
     def test_constructor(self):
         self.mock_git.assert_called_once_with('foo')
@@ -51,7 +47,7 @@ class PasskeeperTestCase(test_base.TestCase):
         self.mock_git.reset_mock()
         with patch('__builtin__.open', mock_open(), create=True) as file_mock:
             file_handle = file_mock()
-            self.pk.init_dir()
+            self.pk.init_dir(passphrase='secret')
 
         calls = [call().init(), call().add_gitignore(['*.ini', '/*.raw'])]
         self.mock_git.assert_has_calls(calls)
@@ -64,7 +60,7 @@ class PasskeeperTestCase(test_base.TestCase):
 
         self.assertEquals(True, file_handle.write.called)
 
-        mock_encrypt.assert_called_once_with()
+        mock_encrypt.assert_called_once_with(passphrase='secret')
         mock_cleanup.assert_called_once_with()
 
 
@@ -128,7 +124,7 @@ class PasskeeperTestCase(test_base.TestCase):
         # Used in walk dir
         mock_listdir.return_value = ['ignored', 'bar.ini.passkeeper', 'foo.raw/bli.passkeeper']
         mock_isfile.return_value = True
-        self.pk.decrypt()
+        self.pk.decrypt(passphrase='secret')
 
         mock_decrypt.assert_any_call(output='foo/bar.ini', passphrase='secret',
                                      source='foo/encrypted/bar.ini.passkeeper')
@@ -139,7 +135,7 @@ class PasskeeperTestCase(test_base.TestCase):
         mock_decrypt.reset_mock()
         mock_listdir.return_value = ['bad_fake_file']
         mock_isfile.return_value = False
-        self.pk.decrypt()
+        self.pk.decrypt(passphrase='secret')
 
         self.assertEquals(mock_decrypt.call_count, 0)
 
@@ -149,21 +145,13 @@ class PasskeeperTestCase(test_base.TestCase):
     @patch('passkeeper.os.listdir')
     @patch('passkeeper.os.path.isfile')
     def test_encrypt(self, mock_isfile, mock_listdir, mock_encrypt, mock_create_dir):
-        # Wrong confirmation password
-        orig_getpass = passkeeper.getpass
-        passkeeper.getpass = Mock()
-        passkeeper.getpass.side_effect = ['secret', 'secret_typo']
-
-        self.assertFalse(self.pk.encrypt())
-        passkeeper.getpass = orig_getpass
-
         # Test with bad filepath. Don't encrypt this file
         mock_encrypt.reset_mock()
         self.mock_git.reset_mock()
         mock_listdir.return_value = ['fake_bar_file.ini']
         mock_isfile.return_value = False
 
-        self.assertTrue(self.pk.encrypt())
+        self.assertTrue(self.pk.encrypt(passphrase='secret'))
         self.assertEquals(mock_encrypt.call_count, 0)
 
         # One ignored file and one valid file
@@ -175,7 +163,7 @@ class PasskeeperTestCase(test_base.TestCase):
         mock_listdir.side_effect = [['ignored', 'bar.ini', 'foo.raw'], ['bli']]
         mock_isfile.return_value = True
 
-        self.assertTrue(self.pk.encrypt(commit_message='my message'))
+        self.assertTrue(self.pk.encrypt(passphrase='secret', commit_message='my message'))
 
         calls = [call('foo/encrypted'), call('foo/encrypted/foo.raw')]
         mock_create_dir.assert_has_calls(calls)

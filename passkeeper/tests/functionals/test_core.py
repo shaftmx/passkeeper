@@ -41,10 +41,6 @@ class CoreTestCase(test_base.TestCase):
 
     def test_core(self):
 
-        # Fake getpass
-        passkeeper.getpass = mock.MagicMock()
-        passkeeper.getpass.return_value = "foo"
-
         #
         # init
         #
@@ -54,7 +50,7 @@ class CoreTestCase(test_base.TestCase):
         self.assertFalse(isdir('.tox/foo'))
 
         # Init directory
-        pk.init_dir()
+        pk.init_dir(passphrase='secret')
 
         # Check initialised
         self.assertTrue(isdir('.tox/foo'))
@@ -80,7 +76,7 @@ class CoreTestCase(test_base.TestCase):
         #
         # Decrypt files
         #
-        pk.decrypt()
+        pk.decrypt(passphrase='secret')
 
         self.assertTrue(isfile('.tox/foo/default.ini'))
         self.assertStringInFile(filename = '.tox/foo/default.ini',
@@ -106,7 +102,7 @@ comments = bar is good website
         #
         # Encrypt files
         #
-        pk.encrypt(commit_message='Add bar entry')
+        pk.encrypt(passphrase='secret', commit_message='Add bar entry')
 
         # all file should say
         self.assertTrue(isfile('.tox/foo/default.ini'))
@@ -129,23 +125,19 @@ comments = bar is good website
         #
         # Decrypt file (last validation)
         #
-        pk.decrypt()
+        pk.decrypt(passphrase='secret')
 
         self.assertStringInFile(filename = '.tox/foo/default.ini',
                                 pattern = 'bar is good website')
 
     def test_add_file(self):
 
-        # Fake getpass
-        passkeeper.getpass = mock.MagicMock()
-        passkeeper.getpass.return_value = "foo"
-
         # init
         pk = passkeeper.Passkeeper(directory='.tox/foo')
         # Init directory
-        pk.init_dir()
+        pk.init_dir(passphrase='secret')
         # Decrypt files
-        pk.decrypt()
+        pk.decrypt(passphrase='secret')
 
         # Add new bar.ini file
         sample_file = ("""[bar]
@@ -166,7 +158,7 @@ comments = bar is good website
             f.write(sample_file)
 
         # Encrypt files
-        pk.encrypt()
+        pk.encrypt(passphrase='secret')
         # Call cleanup ini files
         pk.cleanup_ini()
         self.assertFalse(isfile('.tox/foo/bar.ini'))
@@ -180,7 +172,7 @@ comments = bar is good website
                                 pattern = 'BEGIN PGP MESSAGE')
 
         # re Decrypt files
-        pk.decrypt()
+        pk.decrypt(passphrase='secret')
         self.assertTrue(isfile('.tox/foo/bar.ini'))
         self.assertStringInFile(filename = '.tox/foo/bar.ini',
                                 pattern = 'bar is good website')
@@ -192,16 +184,12 @@ comments = bar is good website
 
     # Test flush history
     def test_flush_history(self):
-        # Fake getpass
-        passkeeper.getpass = mock.MagicMock()
-        passkeeper.getpass.return_value = "foo"
-
         # init
         pk = passkeeper.Passkeeper(directory='.tox/foo')
         # Init directory
-        pk.init_dir()
+        pk.init_dir(passphrase='secret')
         # Decrypt files
-        pk.decrypt()
+        pk.decrypt(passphrase='secret')
 
         # Add input in file
         sample_file = ("""[bar]
@@ -216,7 +204,7 @@ comments = bar is good website
             f.write(sample_file)
 
         # Encrypt files
-        pk.encrypt(commit_message='Add bar entry')
+        pk.encrypt(passphrase='secret', commit_message='Add bar entry')
         # Call cleanup ini files
         pk.cleanup_ini()
 
@@ -242,18 +230,15 @@ comments = bar is good website
     def test_delete_file(self):
         """ Create a new file. Decrypt this file and delete it.
         The encrypted file should be delete at the cleanup function"""
-        # Fake getpass
-        passkeeper.getpass = mock.MagicMock()
-        passkeeper.getpass.return_value = "foo"
         # Fake raw_input 
         passkeeper.raw_input = lambda x: 'y'
 
         # init
         pk = passkeeper.Passkeeper(directory='.tox/foo')
         # Init directory
-        pk.init_dir()
+        pk.init_dir(passphrase='secret')
         # Decrypt files
-        pk.decrypt()
+        pk.decrypt(passphrase='secret')
 
         # Add input in file
         sample_file = ("""[bar]
@@ -269,18 +254,18 @@ name = bar access
             f.write(sample_file)
 
         # Encrypt files
-        pk.encrypt(commit_message='Add bar entry')
+        pk.encrypt(passphrase='secret', commit_message='Add bar entry')
         # Call cleanup ini files
         pk.cleanup_ini()
 
         # Decrypt file (last validation)
-        pk.decrypt()
+        pk.decrypt(passphrase='secret')
         os.remove('.tox/foo/bar.ini')
         shutil.rmtree('.tox/foo/bar.raw/')
 
 
         # Encrypt files
-        pk.encrypt(commit_message='Will remove bar.ini and bar.raw/*')
+        pk.encrypt(passphrase='secret', commit_message='Will remove bar.ini and bar.raw/*')
 
 
         # Control state befor

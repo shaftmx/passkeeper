@@ -22,7 +22,6 @@ from passkeeper.tools import *
 from passkeeper.git import Git
 from passkeeper.crypt import encrypt, decrypt
 import ConfigParser
-from getpass import getpass
 from os.path import dirname
 from os.path import relpath as relative_path
 from os.path import join as os_join
@@ -38,7 +37,7 @@ class Passkeeper(object):
         self.encrypted_dir = 'encrypted'
 
 
-    def init_dir(self):
+    def init_dir(self, passphrase):
         LOG.info('Init directory %s' % self.directory)
         create_dir(self.directory)
 
@@ -68,18 +67,12 @@ MIIEpAIBAAKCA
         with open(os_join(self.directory, 'default.raw', 'ssh_id.rsa'), 'w') as f:
             f.write(sample_raw)
 
-        self.encrypt()
+        self.encrypt(passphrase=passphrase)
         self.cleanup_ini()
 
 
-    def encrypt(self, commit_message='Update encrypted files'):
+    def encrypt(self, passphrase, commit_message='Update encrypted files'):
         LOG.info('Encryption')
-        passphrase = getpass()
-        passphrase_confirm = getpass('Confirm: ')
-        if passphrase != passphrase_confirm:
-            LOG.critical('Password and confirm are different')
-            return False
-
         create_dir(os_join(self.directory, self.encrypted_dir))
 
         LOG.info('Encrypt files :')
@@ -131,9 +124,7 @@ MIIEpAIBAAKCA
         return True
 
 
-    def decrypt(self):
-        passphrase = getpass()
-
+    def decrypt(self, passphrase):
         LOG.info('Decrypt files :')
         source_dir = os_join(self.directory, self.encrypted_dir)
 
