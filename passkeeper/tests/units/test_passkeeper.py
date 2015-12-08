@@ -76,7 +76,7 @@ class PasskeeperTestCase(test_base.TestCase):
         self.pk.cleanup_ini()
 
         mock_cmd.assert_called_once_with('shred --remove foo/bar.ini')
-        mock_remove_old_encrypted_files.assert_called_once_with()
+        mock_remove_old_encrypted_files.assert_called_once_with(force_remove=False)
 
         # Test with bad filepath. Do nothing
         mock_cmd.reset_mock()
@@ -100,20 +100,29 @@ class PasskeeperTestCase(test_base.TestCase):
         #  * foo delete canceled
         #  * bli deleted
 
-
         mock_raw_input.side_effect = ['n', 'y']
         # listdir is used by walk
         mock_listdir.return_value = [ 'bar.ini.passkeeper',
                                       'foo.ini.passkeeper',
                                       'dir/bli.ini.passkeeper']
         mock_isfile.side_effect = [ True, False, False ]
-        self.pk._remove_old_encrypted_files()
+        self.pk._remove_old_encrypted_files(force_remove=False)
 
         mock_cmd.assert_called_once_with('shred foo/encrypted/dir/bli.ini.passkeeper')
         calls = [ call().force_remove(['encrypted/dir/bli.ini.passkeeper']),
                   call().commit('Remove file encrypted/dir/bli.ini.passkeeper')]
         self.mock_git.assert_has_calls(calls)
 
+        # Same test with force remove.
+        # Never ask confirmation, just delete both files
+        mock_cmd.reset_mock()
+        mock_raw_input.reset_mock()
+        mock_isfile.side_effect = [ True, False, False ]
+
+        self.pk._remove_old_encrypted_files(force_remove=True)
+
+        self.assertEquals(2, mock_cmd.call_count)
+        self.assertEquals(0, mock_raw_input.call_count)
 
 
     @patch('passkeeper.decrypt')

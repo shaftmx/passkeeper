@@ -145,7 +145,7 @@ MIIEpAIBAAKCA
                     LOG.info(decrypted.status)
 
 
-    def _remove_old_encrypted_files(self):
+    def _remove_old_encrypted_files(self, force_remove=False):
         "remove old passkeeper files"
         root_dir = os_join(self.directory, self.encrypted_dir)
         for root, dirs, files in os.walk(root_dir, topdown=False):
@@ -159,24 +159,31 @@ MIIEpAIBAAKCA
                 # /git/foo/bar
                 orig_file_path = os_join(self.directory, re.sub('.passkeeper$', '',
                                                                 relative_path(path=root_file_path, start=root_dir)))
-                if not os.path.isfile(orig_file_path):
+                # Skip if file exist
+                if os.path.isfile(orig_file_path):
+                    continue
+
+                if not force_remove:
+                    # If not force, ask
                     req = raw_input("File %s will be deleted because origin file hasn't been found, are you sure (y/n)\n" % git_relative_encrypted_file_path)
-                    if req == "y":
-                        LOG.info('File %s will be deleted because origin file hasn t been found.' % git_relative_encrypted_file_path)
-                        # shred file and then git remove because git remove automaticaly empty dirs
-                        run_cmd('shred %s' % root_file_path)
-                        self.git.force_remove([git_relative_encrypted_file_path])
-                        self.git.commit('Remove file %s' % git_relative_encrypted_file_path)
-                    else:
+                    if req != "y":
                         LOG.info('File %s has been concerved.' % git_relative_encrypted_file_path)
+                        continue
+
+                # Remove the file
+                LOG.info('File %s will be deleted because origin file hasn t been found.' % git_relative_encrypted_file_path)
+                # shred file and then git remove because git remove automaticaly empty dirs
+                run_cmd('shred %s' % root_file_path)
+                self.git.force_remove([git_relative_encrypted_file_path])
+                self.git.commit('Remove file %s' % git_relative_encrypted_file_path)
 
 
 
-    def cleanup_ini(self):
+    def cleanup_ini(self, force_remove=False):
         "Shred all ini files and remove old passkeeper files"
 
         # Remove old passkeeper files
-        self._remove_old_encrypted_files()
+        self._remove_old_encrypted_files(force_remove=force_remove)
         # Remove ini files
         for fname in os.listdir(self.directory):
             file_path = os_join(self.directory, fname)
