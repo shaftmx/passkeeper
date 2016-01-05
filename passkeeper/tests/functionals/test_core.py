@@ -280,6 +280,8 @@ name = bar access
         # Should have a commit for file deleted
         self.assertFalse(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))
         self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
+        self.assertFalse(isfile('.tox/foo/encrypted/bar.raw/private.passkeeper'))
+        self.assertFalse(isdir('.tox/foo/encrypted/bar.raw'))
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
         self.assertTrue( 'Remove file encrypted/bar.raw/private.passkeeper' in git_logs[-2] )
         self.assertTrue( 'Remove file encrypted/bar.ini.passkeeper' in git_logs[-1] )
