@@ -23,7 +23,6 @@ import passkeeper
 from passkeeper.tools import *
 from passkeeper.git import *
 from passkeeper.crypt import *
-import mock
 from os.path import isfile, isdir
 import shutil
 
@@ -64,8 +63,8 @@ class CoreTestCase(test_base.TestCase):
         self.assertTrue(isdir('.tox/foo/encrypted/default.raw'))
         self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
         self.assertTrue(isfile('.tox/foo/encrypted/default.raw/ssh_id.rsa.passkeeper'))
-        self.assertStringInFile(filename = '.tox/foo/encrypted/default.ini.passkeeper',
-                                pattern = 'BEGIN PGP MESSAGE')
+        self.assertStringInFile(filename='.tox/foo/encrypted/default.ini.passkeeper',
+                                pattern='BEGIN PGP MESSAGE')
 
         # At this state we should have 2 log line.
         # 1 add gitignore file
@@ -79,8 +78,8 @@ class CoreTestCase(test_base.TestCase):
         pk.decrypt(passphrase='secret')
 
         self.assertTrue(isfile('.tox/foo/default.ini'))
-        self.assertStringInFile(filename = '.tox/foo/default.ini',
-                                pattern = 'foo is good website')
+        self.assertStringInFile(filename='.tox/foo/default.ini',
+                                pattern='foo is good website')
         self.assertTrue(isfile('.tox/foo/default.raw/ssh_id.rsa'))
 
         # Add input in file
@@ -110,9 +109,9 @@ comments = bar is good website
 
         # At this state we should have our new commit (last line)
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
-        self.assertTrue( 'Add bar entry' in git_logs[-1] )
-        self.assertStringInFile(filename = '.tox/foo/encrypted/default.ini.passkeeper',
-                                pattern = 'BEGIN PGP MESSAGE')
+        self.assertTrue('Add bar entry' in git_logs[-1])
+        self.assertStringInFile(filename='.tox/foo/encrypted/default.ini.passkeeper',
+                                pattern='BEGIN PGP MESSAGE')
 
         # Call cleanup ini files
         pk.cleanup_ini()
@@ -127,8 +126,8 @@ comments = bar is good website
         #
         pk.decrypt(passphrase='secret')
 
-        self.assertStringInFile(filename = '.tox/foo/default.ini',
-                                pattern = 'bar is good website')
+        self.assertStringInFile(filename='.tox/foo/default.ini',
+                                pattern='bar is good website')
 
     def test_add_file(self):
 
@@ -166,19 +165,19 @@ comments = bar is good website
         self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
         self.assertTrue(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))
         self.assertTrue(isfile('.tox/foo/encrypted/bar.raw/private.passkeeper'))
-        self.assertStringInFile(filename = '.tox/foo/encrypted/bar.ini.passkeeper',
-                                pattern = 'BEGIN PGP MESSAGE')
-        self.assertStringInFile(filename = '.tox/foo/encrypted/bar.raw/private.passkeeper',
-                                pattern = 'BEGIN PGP MESSAGE')
+        self.assertStringInFile(filename='.tox/foo/encrypted/bar.ini.passkeeper',
+                                pattern='BEGIN PGP MESSAGE')
+        self.assertStringInFile(filename='.tox/foo/encrypted/bar.raw/private.passkeeper',
+                                pattern='BEGIN PGP MESSAGE')
 
         # re Decrypt files
         pk.decrypt(passphrase='secret')
         self.assertTrue(isfile('.tox/foo/bar.ini'))
-        self.assertStringInFile(filename = '.tox/foo/bar.ini',
-                                pattern = 'bar is good website')
+        self.assertStringInFile(filename='.tox/foo/bar.ini',
+                                pattern='bar is good website')
         self.assertTrue(isfile('.tox/foo/bar.raw/private'))
-        self.assertStringInFile(filename = '.tox/foo/bar.raw/private',
-                                pattern = 'My private data')
+        self.assertStringInFile(filename='.tox/foo/bar.raw/private',
+                                pattern='My private data')
 
 
 
@@ -211,8 +210,8 @@ comments = bar is good website
         # Check number of commit
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
         self.assertEquals(3, len(git_logs))
-        self.assertStringInFile(filename = '.tox/foo/.git/logs/HEAD',
-                                pattern = 'Add bar entry')
+        self.assertStringInFile(filename='.tox/foo/.git/logs/HEAD',
+                                pattern='Add bar entry')
 
         # flush
         pk.flush_history()
@@ -224,8 +223,8 @@ comments = bar is good website
         # At this state we should have only one new commit (Clean history)
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
         self.assertEquals(1, len(git_logs))
-        self.assertStringInFile(filename = '.tox/foo/.git/logs/HEAD',
-                                pattern = 'Clean git History')
+        self.assertStringInFile(filename='.tox/foo/.git/logs/HEAD',
+                                pattern='Clean git History')
 
     def test_delete_file(self):
         """ Create a new file. Decrypt this file and delete it.
@@ -272,7 +271,7 @@ name = bar access
         self.assertTrue(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))
         self.assertTrue(isfile('.tox/foo/encrypted/bar.raw/private.passkeeper'))
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
-        self.assertTrue( 'Will remove bar.ini and bar.raw/*' in git_logs[-1] )
+        self.assertTrue('Will remove bar.ini and bar.raw/*' in git_logs[-1])
 
         # Call cleanup. file bar.passkeeped should be remove
         pk.cleanup_ini()
@@ -283,8 +282,8 @@ name = bar access
         self.assertFalse(isfile('.tox/foo/encrypted/bar.raw/private.passkeeper'))
         self.assertFalse(isdir('.tox/foo/encrypted/bar.raw'))
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
-        self.assertTrue( 'Remove file encrypted/bar.raw/private.passkeeper' in git_logs[-2] )
-        self.assertTrue( 'Remove file encrypted/bar.ini.passkeeper' in git_logs[-1] )
+        self.assertTrue('Remove file encrypted/bar.raw/private.passkeeper' in git_logs[-2])
+        self.assertTrue('Remove file encrypted/bar.ini.passkeeper' in git_logs[-1])
 
 
 # Search in a file
