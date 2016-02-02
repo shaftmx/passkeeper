@@ -14,6 +14,17 @@ This is a very simple password keeper based on `ini` file and symmetric `gpg` en
   * Delete ini file after encryption with shred
   * Encrypt/Delete file in a `.raw` directory
 
+Overview
+==========
+
+![Archi](https://raw.githubusercontent.com/shaftmx/passkeeper/doc/docs/archi.png)
+
+  * 1. Passkeeper take care of `.ini` files and files in `.raw` directories
+  * 2. Passkeeper ask you a password to encrypt your files. 
+  * 3. All files are encrypted with standard `openpgp`.
+  * 4. Encrypted files are put in the `encrypted` directory.
+  * 5. And then Encrypted files are archived in a local git with a `git commit`
+
 Quick usage
 ===========
 
