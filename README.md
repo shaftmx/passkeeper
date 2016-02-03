@@ -17,7 +17,7 @@ This is a very simple password keeper based on `ini` file and symmetric `gpg` en
 Overview
 ==========
 
-![Archi](https://raw.githubusercontent.com/shaftmx/passkeeper/doc/docs/archi.png)
+![Archi](https://raw.githubusercontent.com/shaftmx/passkeeper/master/docs/archi.png)
 
   * 1. Passkeeper take care of `.ini` files and files in `.raw` directories
   * 2. Passkeeper ask you a password to encrypt your files. 
