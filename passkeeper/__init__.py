@@ -127,7 +127,7 @@ MIIEpAIBAAKCA
     def decrypt(self, passphrase):
         LOG.info('Decrypt files :')
         source_dir = os_join(self.directory, self.encrypted_dir)
-
+        status = True
         for root, dirs, files in os.walk(source_dir, topdown=False):
             for name in files:
                 file_path = os_join(root, name)
@@ -142,7 +142,10 @@ MIIEpAIBAAKCA
                     decrypted = decrypt(source=file_path,
                             output=decrypted_file_path,
                             passphrase=passphrase)
+                    if decrypted.status == "decryption failed":
+                        status = False
                     LOG.info(decrypted.status)
+        return status
 
 
     def _remove_old_encrypted_files(self, force_remove=False):
