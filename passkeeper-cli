@@ -64,8 +64,8 @@ def init_argparse():
     parser.add_argument("-e", '--encrypt',
                         help="Decrypt all .ini files",
                         action='store_true')
-    parser.add_argument("-c", '--clean-all',
-                        help="Clean all files (use it if you don't do any modifications",
+    parser.add_argument("-c", '--clean',
+                        help="Clean decrypted files (only).",
                         action='store_true')
     parser.add_argument("-m", "--commit-message",
                         help="Commit with a specific message",

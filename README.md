@@ -84,6 +84,14 @@ passkeeper-cli --directory /opt/mypasskeeper --encrypt
 
 All ini file are encrypted with standard `gnupg symmetric` mode. All ini file are `shred` and a commit make local `git commit`.
 
+You also can use `clean` function if you just open (decrypt) files and doesn't do modification. Just want to close passkeeper (delete all decrypted files).
+
+```
+  passkeeper-cli --directory /opt/mypasskeeper --clean
+```
+
+It's better to use `clean` than manually `rm` files because it will apply `shred` on each files.
+
 
 Setup
 ======
