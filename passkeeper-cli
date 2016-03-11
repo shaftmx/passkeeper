@@ -64,6 +64,9 @@ def init_argparse():
     parser.add_argument("-e", '--encrypt',
                         help="Decrypt all .ini files",
                         action='store_true')
+    parser.add_argument("-c", '--clean-all',
+                        help="Clean all files (use it if you don't do any modifications",
+                        action='store_true')
     parser.add_argument("-m", "--commit-message",
                         help="Commit with a specific message",
                         metavar="MESSAGE",
@@ -109,4 +112,6 @@ if __name__ == '__main__':
     # Clean git history    
     elif args.flush_history:
         pk.flush_history()
-
+    # Clean all files     
+    elif args.clean_all:
+        pk.cleanup_ini()
