@@ -90,7 +90,8 @@ MIIEpAIBAAKCA
                 encrypted = encrypt(source=file_path,
                                     output=encrypted_file_path,
                                     passphrase=passphrase)
-                LOG.info(encrypted.status)
+                if not encrypted.ok:
+                    LOG.error("Encrypt file %s - %s" % (fname, encrypted.stderr))
                 self.git.add([git_relative_encrypted_file_path])
             # Handle .raw directory
             if (fname.endswith('.raw')
@@ -117,7 +118,8 @@ MIIEpAIBAAKCA
                         encrypted = encrypt(source=root_raw_file_path,
                                             output=root_encrypted_file_path,
                                             passphrase=passphrase)
-                        LOG.info(encrypted.status)
+                        if not encrypted.ok:
+                            LOG.error("Encrypt file %s - %s" % (fname, encrypted.stderr))
                         self.git.add([git_encrypted_relative_file_path])
 
         self.git.commit('%s' % commit_message)
@@ -145,6 +147,8 @@ MIIEpAIBAAKCA
                     if decrypted.status == "decryption failed":
                         status = False
                     LOG.info(decrypted.status)
+                    if not decrypted.ok:
+                        LOG.error("Decrypt file %s - %s" % (fname, decrypted.stderr))
         return status
 
 
