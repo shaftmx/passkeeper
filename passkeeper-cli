@@ -107,11 +107,14 @@ if __name__ == '__main__':
         else:
             status = pk.encrypt(passphrase=passphrase)
         if status:
+            # Delete non present files
+            pk.remove_old_encrypted_files()
+
             # Purge deleted file before encrypt
-            pk.cleanup_ini()
+            pk.cleanup()
     # Clean git history    
     elif args.flush_history:
         pk.flush_history()
     # Clean all files     
     elif args.clean:
-        pk.cleanup_ini()
+        pk.cleanup()

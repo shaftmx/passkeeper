@@ -68,7 +68,9 @@ MIIEpAIBAAKCA
             f.write(sample_raw)
 
         self.encrypt(passphrase=passphrase)
-        self.cleanup_ini()
+        # Remove old passkeeper files
+        self.remove_old_encrypted_files(force_remove=True)
+        self.cleanup()
 
 
     def encrypt(self, passphrase, commit_message='Update encrypted files'):
@@ -152,7 +154,7 @@ MIIEpAIBAAKCA
         return status
 
 
-    def _remove_old_encrypted_files(self, force_remove=False):
+    def remove_old_encrypted_files(self, force_remove=False):
         "remove old passkeeper files"
         root_dir = os_join(self.directory, self.encrypted_dir)
         for root, dirs, files in os.walk(root_dir, topdown=False):
@@ -186,11 +188,9 @@ MIIEpAIBAAKCA
 
 
 
-    def cleanup_ini(self, force_remove=False):
-        "Shred all ini files and remove old passkeeper files"
+    def cleanup(self):
+        "Shred all ini and raw files"
 
-        # Remove old passkeeper files
-        self._remove_old_encrypted_files(force_remove=force_remove)
         # Remove ini files
         for fname in os.listdir(self.directory):
             file_path = os_join(self.directory, fname)
@@ -198,6 +198,7 @@ MIIEpAIBAAKCA
             and os.path.isfile(file_path)):
                 LOG.info('Clean file %s' % fname)
                 run_cmd('shred --remove %s' % file_path)
+        # Remove raw files
             elif (fname.endswith('.raw')
             and os.path.isdir(file_path)):
                 LOG.info('Clean directory %s' % fname)

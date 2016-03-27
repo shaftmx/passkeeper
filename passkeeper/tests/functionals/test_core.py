@@ -113,8 +113,11 @@ comments = bar is good website
         self.assertStringInFile(filename='.tox/foo/encrypted/default.ini.passkeeper',
                                 pattern='BEGIN PGP MESSAGE')
 
+        # remove non present files
+        pk.remove_old_encrypted_files(force_remove=True)
+
         # Call cleanup ini files
-        pk.cleanup_ini()
+        pk.cleanup()
 
         # Ini file should not stay
         self.assertFalse(isfile('.tox/foo/default.ini'))
@@ -159,7 +162,8 @@ comments = bar is good website
         # Encrypt files
         pk.encrypt(passphrase='secret')
         # Call cleanup ini files
-        pk.cleanup_ini()
+        pk.remove_old_encrypted_files(force_remove=True)
+        pk.cleanup()
         self.assertFalse(isfile('.tox/foo/bar.ini'))
         self.assertFalse(isdir('.tox/foo/bar.raw'))
         self.assertTrue(isfile('.tox/foo/encrypted/default.ini.passkeeper'))
@@ -204,8 +208,10 @@ comments = bar is good website
 
         # Encrypt files
         pk.encrypt(passphrase='secret', commit_message='Add bar entry')
+        # Remove old files
+        pk.remove_old_encrypted_files(force_remove=True)
         # Call cleanup ini files
-        pk.cleanup_ini()
+        pk.cleanup()
 
         # Check number of commit
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
@@ -254,8 +260,10 @@ name = bar access
 
         # Encrypt files
         pk.encrypt(passphrase='secret', commit_message='Add bar entry')
+        # Clean old files
+        pk.remove_old_encrypted_files(force_remove=True)
         # Call cleanup ini files
-        pk.cleanup_ini()
+        pk.cleanup()
 
         # Decrypt file (last validation)
         pk.decrypt(passphrase='secret')
@@ -273,8 +281,11 @@ name = bar access
         git_logs = self._get_file_lines(filename='.tox/foo/.git/logs/HEAD')
         self.assertTrue('Will remove bar.ini and bar.raw/*' in git_logs[-1])
 
+        # Remove old files
+        pk.remove_old_encrypted_files(force_remove=True)
+
         # Call cleanup. file bar.passkeeped should be remove
-        pk.cleanup_ini()
+        pk.cleanup()
 
         # Should have a commit for file deleted
         self.assertFalse(isfile('.tox/foo/encrypted/bar.ini.passkeeper'))

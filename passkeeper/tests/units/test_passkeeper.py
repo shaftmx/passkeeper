@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import base as test_base
-import passkeeper
 from passkeeper import Passkeeper
 from mock import patch, call, mock_open, MagicMock, Mock
 
@@ -40,10 +39,12 @@ class PasskeeperTestCase(test_base.TestCase):
         self.assertEquals(self.pk.encrypted_dir, 'encrypted')
 
 
-    @patch('passkeeper.Passkeeper.cleanup_ini')
+    @patch('passkeeper.Passkeeper.remove_old_encrypted_files')
+    @patch('passkeeper.Passkeeper.cleanup')
     @patch('passkeeper.Passkeeper.encrypt')
     @patch('passkeeper.create_dir')
-    def test_init_dir(self, mock_create_dir, mock_encrypt, mock_cleanup):
+    def test_init_dir(self, mock_create_dir, mock_encrypt, mock_cleanup,
+                      remove_old_encrypted_files):
         self.mock_git.reset_mock()
         with patch('__builtin__.open', mock_open(), create=True) as file_mock:
             file_handle = file_mock()
@@ -60,29 +61,28 @@ class PasskeeperTestCase(test_base.TestCase):
 
         self.assertEquals(True, file_handle.write.called)
 
+        remove_old_encrypted_files.assert_called_once_with(force_remove=True)
+
         mock_encrypt.assert_called_once_with(passphrase='secret')
         mock_cleanup.assert_called_once_with()
 
 
-    @patch('passkeeper.Passkeeper._remove_old_encrypted_files')
     @patch('passkeeper.run_cmd')
     @patch('passkeeper.os.listdir')
     @patch('passkeeper.os.path.isfile')
-    def test_cleanup_ini(self, mock_isfile, mock_listdir, mock_cmd,
-                               mock_remove_old_encrypted_files):
+    def test_cleanup(self, mock_isfile, mock_listdir, mock_cmd):
         # One ignored file and one valid file
         mock_listdir.return_value = ['ignored', 'bar.ini']
         mock_isfile.return_value = True
-        self.pk.cleanup_ini()
+        self.pk.cleanup()
 
         mock_cmd.assert_called_once_with('shred --remove foo/bar.ini')
-        mock_remove_old_encrypted_files.assert_called_once_with(force_remove=False)
 
         # Test with bad filepath. Do nothing
         mock_cmd.reset_mock()
         mock_listdir.return_value = ['bar.ini']
         mock_isfile.return_value = False
-        self.pk.cleanup_ini()
+        self.pk.cleanup()
 
         self.assertEquals(mock_cmd.call_count, 0)
 
@@ -91,7 +91,7 @@ class PasskeeperTestCase(test_base.TestCase):
     @patch('passkeeper.run_cmd')
     @patch('passkeeper.os.listdir')
     @patch('passkeeper.os.path.isfile')
-    def test__remove_old_encrypted_files(self, mock_isfile, mock_listdir,
+    def test_remove_old_encrypted_files(self, mock_isfile, mock_listdir,
                                mock_cmd, mock_raw_input):
         # One file and 3 in encrypted so delete one.
         # Basicly the script will remove 2 file.
@@ -106,7 +106,7 @@ class PasskeeperTestCase(test_base.TestCase):
                                       'foo.ini.passkeeper',
                                       'dir/bli.ini.passkeeper']
         mock_isfile.side_effect = [ True, False, False ]
-        self.pk._remove_old_encrypted_files(force_remove=False)
+        self.pk.remove_old_encrypted_files(force_remove=False)
 
         mock_cmd.assert_called_once_with('shred foo/encrypted/dir/bli.ini.passkeeper')
         calls = [ call().force_remove(['encrypted/dir/bli.ini.passkeeper']),
@@ -119,7 +119,7 @@ class PasskeeperTestCase(test_base.TestCase):
         mock_raw_input.reset_mock()
         mock_isfile.side_effect = [ True, False, False ]
 
-        self.pk._remove_old_encrypted_files(force_remove=True)
+        self.pk.remove_old_encrypted_files(force_remove=True)
 
         self.assertEquals(2, mock_cmd.call_count)
         self.assertEquals(0, mock_raw_input.call_count)
