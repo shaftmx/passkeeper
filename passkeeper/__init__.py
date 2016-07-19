@@ -150,7 +150,7 @@ MIIEpAIBAAKCA
                         status = False
                     LOG.info(decrypted.status)
                     if not decrypted.ok:
-                        LOG.error("Decrypt file %s - %s" % (fname, decrypted.stderr))
+                        LOG.error("Decrypt file %s - %s" % (name, decrypted.stderr))
         return status
 
 
