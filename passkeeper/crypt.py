@@ -25,7 +25,7 @@ LOG = logging.getLogger(__name__)
 
 def encrypt(source, output, passphrase):
     gpg = gnupg.GPG()
-    with open(source, 'r') as f:
+    with open(source, 'rb') as f:
         encrypted = gpg.encrypt_file(
             f,
             recipients=None,
@@ -38,7 +38,7 @@ def encrypt(source, output, passphrase):
 
 def decrypt(source, output, passphrase):
     gpg = gnupg.GPG()
-    with open(source, 'r') as f:
+    with open(source, 'rb') as f:
         decrypted = gpg.decrypt_file(f,
             passphrase=passphrase,
             always_trust=True,
