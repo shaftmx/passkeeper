@@ -21,7 +21,7 @@ import logging
 from passkeeper.tools import *
 from passkeeper.git import Git
 from passkeeper.crypt import encrypt, decrypt
-import ConfigParser
+import configparser
 from os.path import dirname
 from os.path import relpath as relative_path
 from os.path import join as os_join
@@ -268,14 +268,14 @@ MIIEpAIBAAKCA
         # Color matching pattern
         sed = re.compile('(.*)(%s)(.*)' % re.escape(pattern), re.IGNORECASE)
         for section in matching_sections:
-            print '[%s]' % pink(sed.sub('%s%s%s' % (pink('\g<1>'),
+            print('[%s]' % pink(sed.sub('%s%s%s' % (pink('\g<1>'),
                                                     red('\g<2>'),
                                                     pink('\g<3>')),
-                                section))
+                                section)))
             for option, value in config.items(section):
-                print '%s = %s' % (green(option),
+                print('%s = %s' % (green(option),
                                    white(sed.sub('%s%s%s' % (white('\g<1>'),
                                                              red('\g<2>'),
                                                              white('\g<3>')),
-                                         value)))
-            print ''
+                                         value))))
+            print('')
