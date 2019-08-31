@@ -21,7 +21,10 @@ import logging
 from passkeeper.tools import *
 from passkeeper.git import Git
 from passkeeper.crypt import encrypt, decrypt
-import configparser
+try:
+    import ConfigParser
+except ImportError:
+    import configparser as ConfigParser
 from os.path import dirname
 from os.path import relpath as relative_path
 from os.path import join as os_join
